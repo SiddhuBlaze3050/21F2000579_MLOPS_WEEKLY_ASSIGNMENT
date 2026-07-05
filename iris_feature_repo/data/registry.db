@@ -1,49 +1,0 @@
-
-I
-)
-__dummy"
-__dummy_idJiris_feature_store
-½Ÿ¨Ò ÃË×½Ÿ¨Ò ÃË×
-y
-Y
-iris_id/A unique identifier for each iris flower sample"iris_idJiris_feature_store
-½Ÿ¨Ò¸—××½Ÿ¨Ò¸—××1"$08a57936-f4f2-4788-adfc-1d3fe056d482*æ°¨Òèš×P2•
-ß
-iris_featuresiris_feature_storeiris_id"
-sepal_length"
-sepal_width"
-petal_length"
-petal_width"
-species2€†°–:½event_timestampZ*(data/iris_data_adapted_for_feast.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢(data/iris_data_adapted_for_feast.parquet’œ®¨ÒÈİéÊ"œ®¨ÒÈİéÊ@b
-iris_id’latest1
-½Ÿ¨Òˆ‰á×æ°¨Òğ¶±P
-€‡µÃ€±ï† 0RŒ
-‰
-,feast.infra.online_stores.sqlite.SqliteTable"Y
-5/home/jupyter/Week-3/iris_feature_repo/data/online.db iris_feature_store_iris_featuresbÒevent_timestampZ*(data/iris_data_adapted_for_feast.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢(data/iris_data_adapted_for_feast.parquetªiris_feature_store’½Ÿ¨ÒÄÉÄ"½Ÿ¨Ò £¬×Š4
-
-iris_feature_store
-½Ÿ¨Ò€Í©Å½Ÿ¨Ò€Í©Å’Ù
-ç
-iris_featuresiris_feature_store"feature_view*ÿ
-Ş
-iris_featuresiris_feature_storeiris_id"
-sepal_length"
-sepal_width"
-petal_length"
-petal_width"
-
-target2€†°–:½event_timestampZ*(data/iris_data_adapted_for_feast.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢(data/iris_data_adapted_for_feast.parquet’½Ÿ¨ÒÄÉÄ"½Ÿ¨Ò £¬×@b
-iris_id’latest
-½Ÿ¨Òˆ‰á×½Ÿ¨Òˆ‰á×2½Ÿ¨ÒøªØB$187aa005-4750-428d-9a85-2f24a4a83300
-ì
-iris_featuresiris_feature_store"feature_view*‚
-ß
-iris_featuresiris_feature_storeiris_id"
-sepal_length"
-sepal_width"
-petal_length"
-petal_width"
-species2€†°–:½event_timestampZ*(data/iris_data_adapted_for_feast.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢(data/iris_data_adapted_for_feast.parquet’œ®¨ÒÈİéÊ"œ®¨ÒÈİéÊ@b
-iris_id’latest
-½Ÿ¨Òˆ‰á×œ®¨ÒğÌåÕ 2œ®¨Ò˜¸ª×B$c4ed4486-0d8b-4ec8-be15-cfb7ea223d0e
