@@ -1,0 +1,8 @@
+project: iris_feature_store_bq
+registry: data/registry.db
+provider: local
+offline_store:
+    type: bigquery
+online_store:
+    type: sqlite
+    path: data/online.db
