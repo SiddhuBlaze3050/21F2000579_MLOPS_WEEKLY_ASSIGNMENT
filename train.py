@@ -3,6 +3,7 @@ from feast import FeatureStore
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
+import joblib
 
 # 1. Initialize the Feature Store
 # We point this to our Feast directory so the SDK can read the registry.db catalog we just built.
@@ -47,3 +48,6 @@ model.fit(X_train, y_train)
 predictions = model.predict(X_test)
 accuracy = accuracy_score(y_test, predictions)
 print(f"\nModel trained successfully! Accuracy: {accuracy * 100:.2f}%")
+
+joblib.dump(model, "iris_model.joblib")
+print("Model saved to iris_model.joblib")
