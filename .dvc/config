@@ -1,0 +1,4 @@
+[core]
+    remote = myremote
+['remote "myremote"']
+    url = gs://mlops-course-project-d5c04e1d-be23-4954-84c-week-2
