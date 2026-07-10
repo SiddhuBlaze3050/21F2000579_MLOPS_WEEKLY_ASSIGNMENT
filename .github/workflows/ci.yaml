@@ -1,0 +1,53 @@
+name: IRIS CI Pipeline
+
+# TASK 4: Enable CI on Every Push & PR
+on:
+  push:
+    branches: [ "**" ] # Runs on all branches
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    # CRITICAL: These permissions are required for Workload Identity Federation to work!
+    # It allows GitHub to generate the temporary OIDC token to hand to Google.
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      # Step 1: Download the repository code into the runner
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up a Python environment
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10' # You can adjust this to match your local version
+
+      # Step 3: Install all required Python libraries
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pandas scikit-learn joblib dvc dvc-gs
+
+      # Step 4: Authenticate to Google Cloud using WIF (Keyless!)
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: '${{ secrets.WIF_PROVIDER }}'
+          service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}'
+
+      # Step 5: TASK 3 - Pull data and models from GCP Bucket
+      - name: DVC Pull Data and Model
+        run: |
+          dvc pull
+
+      # Step 6: TASK 3 - Run the Validation and Evaluation tests
+      - name: Run Pytest
+        run: |
+          pytest tests/ -v
