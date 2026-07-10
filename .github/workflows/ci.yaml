@@ -47,7 +47,25 @@ jobs:
         run: |
           dvc pull
 
-      # Step 6: TASK 3 - Run the Validation and Evaluation tests
-      - name: Run Pytest
+      # Step 6: Setup CML (Continuous Machine Learning)
+      - name: Setup CML
+        uses: iterative/setup-cml@v2
+
+      # Step 7: TASK 5 - Run Pytest, capture output, and post CML report
+      - name: Run Pytest and Publish CML Report
+        env:
+          # CML needs the default GitHub token to have permission to write a comment
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pytest tests/ -v
+          # 1. Create the markdown report header
+          echo "# 📊 Pipeline Evaluation Report" > report.md
+          echo "Here are the results of the automated data and model validation tests:" >> report.md
+          echo "" >> report.md
+          
+          # 2. Run Pytest and pipe the output into the markdown report inside a code block
+          echo "\`\`\`text" >> report.md
+          pytest tests/ -v >> report.md
+          echo "\`\`\`" >> report.md
+          
+          # 3. Tell CML to post the report as a comment!
+          cml comment create report.md
