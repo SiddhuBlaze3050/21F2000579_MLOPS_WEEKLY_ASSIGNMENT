@@ -16,6 +16,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      pull-requests: write    # <--- ADD THIS LINE!
 
     steps:
       # Step 1: Download the repository code into the runner
