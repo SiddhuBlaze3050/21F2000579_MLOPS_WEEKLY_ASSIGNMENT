@@ -15,7 +15,7 @@ jobs:
     # It allows GitHub to generate the temporary OIDC token to hand to Google.
     permissions:
       id-token: write
-      contents: read
+      contents: write
       pull-requests: write    # <--- Required for CML
 
     steps:

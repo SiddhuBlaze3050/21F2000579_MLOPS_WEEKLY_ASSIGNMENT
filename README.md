@@ -1,43 +1,46 @@
-# MLOps Week 4: Continuous Integration & Automated Testing
+# 🚀 Week 5: MLflow Integration & Experiment Tracking
 
-This repository contains the Week 4 assignment for the MLOps curriculum. The objective of this week's milestone was to build a robust, enterprise-grade Continuous Integration (CI) pipeline using GitHub Actions, ensuring that no degraded models or corrupted data make their way into production.
+## 📖 Overview
+In Week 4, we established a robust CI/CD pipeline using DVC and GitHub Actions. For Week 5, we have upgraded our MLOps architecture by integrating **MLflow**. We decoupled our model storage from DVC and transitioned to a centralized MLflow Model Registry using **DagsHub** as our remote tracking server. 
 
-## 🚀 Project Overview
+This branch (`week_5`) demonstrates the transition from static model training to dynamic hyperparameter experimentation, comprehensive metric tracking, and registry-based model serving.
 
-We transitioned from local, manual model training (Week 2) to a fully automated CI/CD environment. The pipeline automatically triggers on code pushes and Pull Requests, provisioning a cloud runner to authenticate with Google Cloud, retrieve large datasets and model artifacts via DVC, and execute a comprehensive suite of Python tests. Finally, it uses CML to deliver an automated evaluation report directly to the PR for code review.
+---
 
-## 🏗️ Architecture & Key Components
+## 🏗️ Architectural Shift
+*   **Previously (Week 1-4):** DVC tracked both the heavy CSV datasets and the `model.joblib` binary file. 
+*   **Currently (Week 5):** **DVC** strictly handles data versioning (datasets). **MLflow** exclusively handles model versioning, lifecycle stages, experiment tracking, and artifact storage.
 
-### 1. Automated Testing (`pytest`)
-We implemented a strict quality gate using `pytest` located in the `tests/` directory:
-* **Data Validation (`test_data.py`):** Ensures the `iris.csv` training data maintains the correct schema, contains no missing values, utilizes appropriate numeric datatypes, and contains no invalid/negative measurements.
-* **Model Evaluation (`test_model.py`):** Loads the trained `model.joblib` artifact and evaluates it against the `X_test.csv` and `y_test.csv` holdout sets. It enforces a strict accuracy threshold (`>= 85%`). If the model performance degrades below this, the CI pipeline fails and blocks the merge.
+---
 
-### 2. Secure Cloud Authentication (Workload Identity Federation)
-Instead of relying on long-lived, risky JSON Service Account keys, this repository establishes a trust relationship with Google Cloud using **Workload Identity Federation (WIF)**. 
-* GitHub Actions generates a temporary, cryptographically signed OIDC token.
-* GCP verifies the repository and issues a short-lived access token, granting read access to the DVC remote storage bucket.
-* Credentials (`WIF_PROVIDER` and `WIF_SERVICE_ACCOUNT`) are securely stored in GitHub Secrets.
+## ✨ Key Features & Tasks Completed
 
-### 3. Data Version Control (DVC)
-The pipeline utilizes `dvc-gs` to execute `dvc pull` during the CI run. This seamlessly bridges the Git repository with the GCP bucket, pulling down the exact version of the datasets and `artifacts/model.joblib` required for the tests to run.
+### 1. Hyperparameter Tuning (Task 1)
+Refactored the static `train.py` script to include a nested loop that systematically iterates through a defined hyperparameter search space (`max_depth` and `min_samples_split`). This generates multiple distinct model configurations in a single run.
 
-### 4. Continuous Integration (GitHub Actions)
-The orchestration is handled by `.github/workflows/ci.yaml`. On every push or PR to `main`, the workflow:
-1. Provisions an `ubuntu-latest` runner.
-2. Sets up Python 3.10 and installs requirements (`pytest`, `pandas`, `scikit-learn`, `dvc-gs`).
-3. Authenticates securely to GCP via WIF.
-4. Pulls versioned artifacts via DVC.
-5. Executes the test suite.
+### 2. Experiment Tracking & DagsHub Integration (Task 2 & 3)
+*   Instrumented the training loop with `mlflow.start_run()`.
+*   Logged hyperparameters (`mlflow.log_params`), evaluation metrics (`mlflow.log_metrics`), and model binaries (`mlflow.sklearn.log_model`) directly to a remote tracking server.
+*   Configured **DagsHub** as a zero-configuration remote backend, allowing us to visualize runs side-by-side using Parallel Coordinates and Scatter plots in the MLflow UI.
 
-### 5. Automated Reporting (CML)
-Using **Continuous Machine Learning (CML)**, the pipeline captures the standard output of the `pytest` execution. If a Pull Request is open, the CML bot automatically formats the results into a Markdown report and posts it as a comment on the PR thread, providing instant visibility to reviewers.
+### 3. DVC Model Decoupling (Task 4)
+*   Safely removed the `model.joblib` file from DVC tracking using `dvc remove`.
+*   Updated `.gitignore` and `dvc.yaml` to reflect that DVC is now strictly responsible for data files (`X_test.csv`, `y_test.csv`, etc.).
 
-## 💻 Running the Tests Locally
+### 4. Dynamic Model Evaluation (Task 5)
+Refactored `eval.py` to eliminate hardcoded local file paths. The evaluation script now dynamically fetches the latest (or best-performing) model directly from the MLflow Model Registry via the DagsHub URI using `mlflow.sklearn.load_model()`.
 
-If you wish to clone this repository and run the validation pipeline on your local machine:
+### 5. Automated CI/CD with MLflow (Task 6)
+Updated the `.github/workflows/ci.yaml` file and Pytest scripts (`tests/test_model.py`) to authenticate with DagsHub securely. The GitHub Actions runner now evaluates incoming Pull Requests by pulling the champion model directly from the MLflow Registry, ensuring production readiness.
 
-1. Ensure your local `gcloud` CLI is authenticated with the correct GCP project.
-2. Install the required dependencies:
-   ```bash
-   pip install pytest pandas scikit-learn joblib dvc dvc-gs
+---
+
+## 🛠️ Setup & Execution
+
+### Prerequisites
+To run this pipeline locally, you must configure your environment to communicate with the remote DagsHub MLflow server. Export the following variables in your terminal:
+
+```bash
+export MLFLOW_TRACKING_USERNAME="<Your_DagsHub_Username>"
+export MLFLOW_TRACKING_PASSWORD="<Your_DagsHub_Token>"
+export MLFLOW_TRACKING_URI="[https://dagshub.com/](https://dagshub.com/)<Your_DagsHub_Username>/21F2000579_MLOPS_WEEKLY_ASSIGNMENT.mlflow"
