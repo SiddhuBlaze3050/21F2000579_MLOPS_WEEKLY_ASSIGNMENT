@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 
 # 1. Set Remote MLflow Tracking Server (DagsHub)
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
-mlflow.set_experiment("iris_hyperparameter_tuning")
+mlflow.set_experiment("iris_HT")
 
 
 # 2. Load Data and Split
@@ -67,7 +67,8 @@ for depth in max_depth_options:
             })
             
             # E. Log Model Artifact directly to MLflow
-            mlflow.sklearn.log_model(model, artifact_path="model")
+            # mlflow.sklearn.log_model(model, name="model")
+            mlflow.sklearn.log_model(model, name="model", registered_model_name="iris_classifier")
             
             print(f"Logged Run [{run_name}] -> Accuracy: {acc:.4f}")
 
