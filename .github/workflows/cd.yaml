@@ -44,3 +44,16 @@ jobs:
       - name: Push Docker Image
         run: |
           docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:latest
+          
+      # Step 6: Deploy to Google Kubernetes Engine
+      - name: Deploy to GKE
+        run: |
+          # Connect to the cluster
+          gcloud container clusters get-credentials test-iris-v1 --zone us-central1-c --project ${{ env.GCP_PROJECT_ID }}
+          
+          # Apply the manifests
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          
+          # Force a restart to ensure Kubernetes pulls the absolute latest image tag
+          kubectl rollout restart deployment/iris-api-deployment
