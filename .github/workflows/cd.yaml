@@ -1,0 +1,51 @@
+name: IRIS Continuous Deployment
+
+on:
+  push:
+    branches: [ "week_6" ] # Triggers the build when you push to this branch
+
+env:
+  REGION: "us-central1"
+  REPO_NAME: "my-repo"
+  IMAGE_NAME: "iris-api"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    # Required permissions for Workload Identity Federation (WIF)
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      # Step 1: Download the repository code into the runner
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Authenticate to Google Cloud using WIF (Keyless!)
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: '${{ secrets.WIF_PROVIDER }}'
+          service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}'
+
+      # Step 3: Configure Docker to use Google Cloud credentials
+      - name: Set up Cloud SDK and Docker Auth
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      # Step 4: Build the Docker Image (Task 6 Integration)
+      - name: Build Docker Image
+        run: |
+          docker build \
+            --build-arg MLFLOW_TRACKING_URI="https://dagshub.com/${{ secrets.DAGSHUB_USERNAME }}/21F2000579_MLOPS_WEEKLY_ASSIGNMENT.mlflow" \
+            --build-arg MLFLOW_TRACKING_USERNAME="${{ secrets.DAGSHUB_USERNAME }}" \
+            --build-arg MLFLOW_TRACKING_PASSWORD="${{ secrets.DAGSHUB_TOKEN }}" \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ steps.auth.outputs.project_id }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:latest .
+          
+      # Step 5: Push the Image to Artifact Registry
+      - name: Push Docker Image
+        run: |
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ steps.auth.outputs.project_id }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:latest
