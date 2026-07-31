@@ -61,7 +61,7 @@ jobs:
           # Wait for the new pods to be ready before testing
           kubectl rollout status deployment/iris-api-deployment --timeout=120s
 
-      - name: Stress Test API (Task 1)
+      - name: Stress Test API
         run: |
           # Install wrk benchmarking tool
           sudo apt-get update && sudo apt-get install -y wrk
