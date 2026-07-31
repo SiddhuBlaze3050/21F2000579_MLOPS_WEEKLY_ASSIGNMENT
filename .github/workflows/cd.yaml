@@ -2,10 +2,10 @@ name: IRIS Continuous Deployment
 
 on:
   push:
-    branches: [ "week_6" ]
+    branches: [ "week_7" ]
 
 env:
-  GCP_PROJECT_ID: "project-d5c04e1d-be23-4954-84c" # <--- Explicitly define your GCP Project ID here
+  GCP_PROJECT_ID: "project-d5c04e1d-be23-4954-84c"
   REGION: "us-central1"
   REPO_NAME: "my-repo"
   IMAGE_NAME: "iris-api"
@@ -45,17 +45,39 @@ jobs:
         run: |
           docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.IMAGE_NAME }}:latest
           
-    # Step 6: Authenticate with GKE (Automatically installs gke-gcloud-auth-plugin!)
       - name: Get GKE Credentials
         uses: google-github-actions/get-gke-credentials@v2
         with:
           cluster_name: 'test-iris-v1'
-          location: 'us-central1-c'
+          location: 'us-east1-b'
           project_id: '${{ env.GCP_PROJECT_ID }}'
 
-      # Step 7: Deploy Manifests to GKE
       - name: Deploy to GKE
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/hpa.yaml
           kubectl rollout restart deployment/iris-api-deployment
+          # Wait for the new pods to be ready before testing
+          kubectl rollout status deployment/iris-api-deployment --timeout=120s
+
+      - name: Stress Test API (Task 1)
+        run: |
+          # Install wrk benchmarking tool
+          sudo apt-get update && sudo apt-get install -y wrk
+          
+          # Wait and extract LoadBalancer External IP dynamically
+          echo "Waiting for LoadBalancer IP to be provisioned..."
+          EXTERNAL_IP=""
+          while [ -z "$EXTERNAL_IP" ]; do
+            sleep 5
+            EXTERNAL_IP=$(kubectl get svc -o jsonpath='{.items[?(@.spec.type=="LoadBalancer")].status.loadBalancer.ingress[0].ip}')
+          done
+          
+          echo "API is live at http://$EXTERNAL_IP"
+          echo "Waiting 15 seconds to ensure service routing is fully active..."
+          sleep 15
+          
+          # Run moderate load test for CI validation
+          echo "Executing wrk load test..."
+          wrk -t4 -c100 -d30s -s post.lua http://$EXTERNAL_IP/predict

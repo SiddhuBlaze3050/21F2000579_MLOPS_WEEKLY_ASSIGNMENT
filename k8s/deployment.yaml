@@ -12,8 +12,28 @@ spec:
       labels:
         app: iris-api
     spec:
+      serviceAccountName: telemetry-access  # Binds Workload Identity for GCP Logging/Tracing
       containers:
       - name: iris-api-container
         image: us-central1-docker.pkg.dev/project-d5c04e1d-be23-4954-84c/my-repo/iris-api:latest
         ports:
         - containerPort: 8200
+        readinessProbe:
+          httpGet:
+            path: /ready_check
+            port: 8200
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /live_check
+            port: 8200
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
