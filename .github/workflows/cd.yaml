@@ -56,7 +56,7 @@ jobs:
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
-          kubectl apply -f k8s/hpa.yaml
+          # kubectl apply -f k8s/hpa.yaml
           kubectl rollout restart deployment/iris-api-deployment
           # Wait for the new pods to be ready before testing
           kubectl rollout status deployment/iris-api-deployment --timeout=120s
@@ -80,4 +80,4 @@ jobs:
           
           # Run moderate load test for CI validation
           echo "Executing wrk load test..."
-          wrk -t4 -c100 -d30s -s post.lua http://$EXTERNAL_IP/predict
+          wrk -t4 -c1000 -d30s -s post.lua http://$EXTERNAL_IP/predict
