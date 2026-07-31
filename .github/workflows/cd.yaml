@@ -56,7 +56,7 @@ jobs:
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
-          # kubectl apply -f k8s/hpa.yaml
+          kubectl apply -f k8s/hpa.yaml
           kubectl rollout restart deployment/iris-api-deployment
           # Wait for the new pods to be ready before testing
           kubectl rollout status deployment/iris-api-deployment --timeout=120s
