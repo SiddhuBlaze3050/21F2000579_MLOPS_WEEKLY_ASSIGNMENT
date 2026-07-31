@@ -80,4 +80,4 @@ jobs:
           
           # Run moderate load test for CI validation
           echo "Executing wrk load test..."
-          wrk -t4 -c1000 -d30s -s post.lua http://$EXTERNAL_IP/predict
+          wrk -t4 -c2000 -d30s -s post.lua http://$EXTERNAL_IP/predict
