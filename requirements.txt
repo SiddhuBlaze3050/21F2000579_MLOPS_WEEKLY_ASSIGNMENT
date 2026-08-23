@@ -5,8 +5,6 @@ pandas
 scikit-learn
 joblib
 mlflow
-opentelemetry-exporter-gcp-trace
 dagshub
-fairlearn
-shap
-evidently
+transformers
+torch
