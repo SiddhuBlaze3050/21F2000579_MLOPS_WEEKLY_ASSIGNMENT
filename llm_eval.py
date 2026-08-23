@@ -1,4 +1,5 @@
 import os
+import sys
 import gc
 import torch
 import pandas as pd
@@ -97,11 +98,35 @@ def evaluate_model(model_path, version="V1"):
     del tokenizer
     gc.collect()
 
+    return concept_accuracy
+
 if __name__ == "__main__":
-    # v1_dir = "models/v1_raw"
+    v1_dir = "models/v1_raw"
     v2_dir = "models/v2_desc"
     
-    # if os.path.exists(v1_dir):
-    #     evaluate_model(v1_dir, version="V1")
+    # Define our regression threshold (e.g., must be at least 25%)
+    THRESHOLD = 25.0 
+    
+    v1_acc = 0.0
+    v2_acc = 0.0
+    
+    if os.path.exists(v1_dir):
+        v1_acc = evaluate_model(v1_dir, version="V1")
+    else:
+        print(f"Path not found: {v1_dir}.")
+
     if os.path.exists(v2_dir):
-        evaluate_model(v2_dir, version="V2")
+        v2_acc = evaluate_model(v2_dir, version="V2")
+    else:
+        print(f"Path not found: {v2_dir}.")
+        
+    # --- CI/CD REGRESSION GUARD ---
+    print("\n==========================================")
+    print(" PIPELINE REGRESSION CHECK")
+    print("==========================================")
+    if v1_acc < THRESHOLD or v2_acc < THRESHOLD:
+        print(f"❌ ERROR: Model accuracy fell below the {THRESHOLD}% threshold!")
+        sys.exit(1) # This forces the GitHub Action to fail
+    else:
+        print(f"✅ PASS: Both models meet the {THRESHOLD}% accuracy threshold.")
+        sys.exit(0) # This tells GitHub Actions it passed

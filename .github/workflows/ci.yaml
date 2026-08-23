@@ -1,41 +1,35 @@
-name: IRIS CI Pipeline
+name: LLMOps CI Pipeline
 
-# TASK 4: Enable CI on Every Push & PR
 on:
   push:
-    branches: [ "**" ] # Runs on all branches
+    branches: [ "**" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "week_10" ]
 
 jobs:
-  build-and-test:
+  llm-eval-and-test:
     runs-on: ubuntu-latest
     
-    # CRITICAL: These permissions are required for Workload Identity Federation to work!
-    # It allows GitHub to generate the temporary OIDC token to hand to Google.
     permissions:
       id-token: write
       contents: write
-      pull-requests: write    # <--- Required for CML
+      pull-requests: write
 
     steps:
-      # Step 1: Download the repository code into the runner
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up a Python environment
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10' # You can adjust this to match your local version
+          python-version: '3.10'
 
-      # Step 3: Install all required Python libraries (Added mlflow here!)
+      # Updated dependencies for LLMs
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pandas scikit-learn joblib dvc dvc-gs mlflow
+          pip install pytest pandas scikit-learn dvc dvc-gs transformers torch
 
-      # Step 4: Authenticate to Google Cloud using WIF (Keyless!)
       - name: Authenticate to Google Cloud
         id: auth
         uses: google-github-actions/auth@v2
@@ -43,34 +37,34 @@ jobs:
           workload_identity_provider: '${{ secrets.WIF_PROVIDER }}'
           service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}'
 
-      # Step 5: Pull data from GCP Bucket (Model is no longer here!)
       - name: DVC Pull Data
         run: |
           dvc pull
 
-      # Step 6: Setup CML (Continuous Machine Learning)
+      # NEW: We must pull the model weights into the CI runner
+      - name: Download Gemma Checkpoints from GCS
+        run: |
+          mkdir -p models/v1_raw models/v2_desc
+          echo "Downloading V1 Model..."
+          gsutil -m cp -r "gs://mlops-course-project-d5c04e1d-be23-4954-84c-week-10/fine-tuning/raw-model/postprocess/node-0/checkpoints/final/*" models/v1_raw/
+          echo "Downloading V2 Model..."
+          gsutil -m cp -r "gs://mlops-course-project-d5c04e1d-be23-4954-84c-week-10/fine-tuning/desc-model/postprocess/node-0/checkpoints/final/*" models/v2_desc/
+
       - name: Setup CML
         uses: iterative/setup-cml@v2
 
-      # Step 7: TASK 6 - Run Pytest with MLflow Registry
-      - name: Run Pytest and Publish CML Report
+      # Run the LLM Evaluation script and catch regressions
+      - name: Run LLM Evaluation and Publish CML Report
         env:
-          # CML needs the default GitHub token to have permission to write a comment
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # MLflow needs these to authenticate with DagsHub and download the model
-          MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USERNAME }}
-          MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
-          MLFLOW_TRACKING_URI: "https://dagshub.com/${{ secrets.DAGSHUB_USERNAME }}/21F2000579_MLOPS_WEEKLY_ASSIGNMENT.mlflow"
         run: |
-          # 1. Create the markdown report header
-          echo "# 📊 Pipeline Evaluation Report" > report.md
-          echo "Here are the results of the automated data and MLflow model validation tests:" >> report.md
+          echo "# 🤖 LLMOps Evaluation Report" > report.md
+          echo "Automated CI check for Gemma-3-1b format compliance and accuracy:" >> report.md
           echo "" >> report.md
           
-          # 2. Run Pytest and pipe the output into the markdown report inside a code block
           echo "\`\`\`text" >> report.md
-          pytest tests/ -v >> report.md
+          # Run the evaluation script. If sys.exit(1) is triggered, this step fails.
+          python llm_eval.py >> report.md 2>&1
           echo "\`\`\`" >> report.md
           
-          # 3. Tell CML to post the report as a comment!
           cml comment create report.md
