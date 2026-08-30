@@ -1,13 +1,13 @@
-name: LLMOps CI Pipeline
+name: LLM Governance CI Pipeline
 
 on:
   push:
     branches: [ "**" ]
   pull_request:
-    branches: [ "main", "master", "week_10" ]
+    branches: [ "main", "master", "week_10", "week_11" ] # Added week_11
 
 jobs:
-  llm-eval-and-test:
+  governance-eval:
     runs-on: ubuntu-latest
     
     permissions:
@@ -24,11 +24,10 @@ jobs:
         with:
           python-version: '3.10'
 
-      # Updated dependencies for LLMs
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pandas scikit-learn dvc dvc-gs transformers torch
+          pip install pytest pandas scikit-learn dvc dvc-gs transformers torch tabulate
 
       - name: Authenticate to Google Cloud
         id: auth
@@ -44,30 +43,28 @@ jobs:
         run: |
           dvc pull
 
-      # NEW: We must pull the model weights into the CI runner
       - name: Download Gemma Checkpoints from GCS
         run: |
           mkdir -p models/v1_raw models/v2_desc
           echo "Downloading V1 Model..."
-          gsutil -m cp -r "gs://mlops-course-project-d5c04e1d-be23-4954-84c-week-10/fine-tuning/raw-model/postprocess/node-0/checkpoints/final/*" models/v1_raw/
+          gcloud storage cp -r "gs://mlops-course-project-d5c04e1d-be23-4954-84c-week-10/fine-tuning/raw-model/postprocess/node-0/checkpoints/final/*" models/v1_raw/
           echo "Downloading V2 Model..."
-          gsutil -m cp -r "gs://mlops-course-project-d5c04e1d-be23-4954-84c-week-10/fine-tuning/desc-model/postprocess/node-0/checkpoints/final/*" models/v2_desc/
+          gcloud storage cp -r "gs://mlops-course-project-d5c04e1d-be23-4954-84c-week-10/fine-tuning/desc-model/postprocess/node-0/checkpoints/final/*" models/v2_desc/
 
       - name: Setup CML
         uses: iterative/setup-cml@v2
 
-      # Run the LLM Evaluation script and catch regressions
-      - name: Run LLM Evaluation and Publish CML Report
+      - name: Run Governance Checks and Publish CML Report
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "# 🤖 LLMOps Evaluation Report" > report.md
-          echo "Automated CI check for Gemma-3-1b format compliance and accuracy:" >> report.md
+          echo "# 🛡️ LLM Governance & Guardrails Report" > report.md
+          echo "Automated CI check for Prompt Injection, Leakage, and Usability:" >> report.md
           echo "" >> report.md
           
           echo "\`\`\`text" >> report.md
-          # Run the evaluation script. If sys.exit(1) is triggered, this step fails.
-          python llm_eval.py >> report.md 2>&1
+          # Execute the guarded pipeline evaluation
+          python guarded_pipeline_eval.py >> report.md 2>&1
           echo "\`\`\`" >> report.md
           
           cml comment create report.md
